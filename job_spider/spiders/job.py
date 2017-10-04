@@ -22,16 +22,21 @@ class JobSpider(scrapy.Spider):
 
     
     def parse(self, response):
-#        db=mydb()
+#        db=mydb()    
+        exit_count=0
         for  detailInfo in  response.xpath("//div[@class='searchResultItemDetailed']"):
+            if exit_count>3:
+                return 
             if not self.is_crawl_all:
                 try:
                     post_hour=int(detailInfo.css('p.searchResultJobAdrNum span em::text').extract()[1].split('小时前')[0])
     #                self.logger.error(post_hour)
     #                self.log(post_hour,level=self.logging.ERROR)
                     if time.localtime().tm_hour-post_hour<0:
-                        continue
+                        exit_count+=1
+                        continue                        
                 except Exception as e:                
+                    exit_count+=1
                     continue            
             Job=JobItem()        
             Job['searchResultJobName']=detailInfo.css('p.searchResultJobName a::text').extract_first()
@@ -48,14 +53,17 @@ class JobSpider(scrapy.Spider):
 ##            self.log(sql)
 #            db.insert(sql)
             yield Job
+            
             info_request=Request('https://'+Job['searchResultUrl'],callback=self.get_detail_info)
+            
 #            info_request.meta['db']=db
             info_request.meta['parmaryId']=Job['parmaryId']
             yield info_request
+            
 #            yield Request('https://'+Job['searchResultUrl'],callback=lambda response ,mainInfoId=Job['parmaryId'],db:self.get_detail_info(response,Job['parmaryId'],db))
             
         count=0
-        
+        time.sleep(10)
         for page_i in response.xpath("//ul[@id='page']/li/a/span/text()"):            
             if '下一页'  in page_i.extract():
                 break
@@ -97,8 +105,7 @@ class JobSpider(scrapy.Spider):
                 continue   
             if len(pre_title2)>0:            
                 jd[pre_title2]=i.extract().strip()       
-        
-        jd['positionDescription']= response.xpath("//p[@class='mt20']/text()").extract_first()#发布时间
+        jd['positionDescription']=''.join(response.xpath("//div[@class='j_cJob_Detail']//*[not(@class='clearfix cJob_Delivery mt24')]/text()").extract()).replace('立即投递','').replace('告诉小伙伴','').replace('举报','').strip()#信息细节
         jd['mainInfoId']=mainInfoId
         field_d=['companyIndustry','companyScale','companyType','currentJobCity','positionType','numberOfDemand','postDatetime','positionDescription']
         for i in field_d:
