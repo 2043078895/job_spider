@@ -20,7 +20,7 @@ NEWSPIDER_MODULE = 'job_spider.spiders'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
-#LOG_LEVEL='ERROR'
+#LOG_LEVEL='WARNING'
 #DOWNLOAD_DELAY =1
 
 

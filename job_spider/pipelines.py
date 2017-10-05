@@ -33,7 +33,7 @@ class JobSpiderPipeline(object):
     @staticmethod
     def do_replace(tx,item):
         if isinstance(item,JobItem):
-            sql='''insert into main_info(id,searchResultJobName,searchResultJobType,searchResultCompanyname,searchResultJobAdrNum,searchResultJobdescription,searchResultUrl,crawl_timestamp)  values(%s,%s,%s,%s,%s,%s,%s,%s)'''
+            sql='''insert into main_info(id,searchResultJobName,searchResultJobType,searchResultCompanyname,searchResultJobAdrNum,searchResultJobdescription,searchResultUrl,crawl_timestamp,jobSiteName)  values(%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
             args=(
             item['parmaryId'],
             item['searchResultJobName'],
@@ -42,10 +42,11 @@ class JobSpiderPipeline(object):
             item['searchResultJobAdrNum'],
             item['searchResultJobdescription'],
             item['searchResultUrl'],
-            item['crawl_timestamp']                    
+            item['crawl_timestamp'], 
+            item['jobSiteName']                  
             )            
         elif isinstance(item,JobDetail):
-            sql='''insert into detail(mainInfoId,companyIndustry,companyScale,companyType,currentJobCity,positionType,numberOfDemand,postDatetime,positionDescription)  values(%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+            sql='''insert into detail(mainInfoId,companyIndustry,companyScale,companyType,currentJobCity,positionType,numberOfDemand,postDatetime,positionDescription,salary)  values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
             args=(
               item['mainInfoId'],
                 item['companyIndustry'],
@@ -55,7 +56,8 @@ class JobSpiderPipeline(object):
                 item['positionType'],
                 item['numberOfDemand'],
                 item['postDatetime'],
-                item['positionDescription']                                                 
+                item['positionDescription']   ,
+                item['salary']
 
               )              
         tx.execute(sql,args)

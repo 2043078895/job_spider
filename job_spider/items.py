@@ -20,6 +20,7 @@ class JobItem(Item):
     searchResultJobdescription=Field()    
     searchResultUrl=Field()
     crawl_timestamp=Field()
+    jobSiteName=Field()
 class JobDetail(Item):
     mainInfoId=Field()#外键
     companyIndustry=Field()#公司行业
@@ -30,4 +31,5 @@ class JobDetail(Item):
     numberOfDemand=Field()#招聘人数
     postDatetime=Field()#发布时间
     positionDescription=Field()#职位描述
+    salary=Field()
 #    crawl_timestamp=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))

@@ -18,11 +18,10 @@ class JobSpider(scrapy.Spider):
                 'https://xiaoyuan.zhaopin.com/full/0/0_0_140000,140100,140200_0_0_-1_0_1_1',
                 'https://xiaoyuan.zhaopin.com/full/0/0_0_180000,180100,150000_0_0_-1_0_1_1']        
         self.is_crawl_all=is_crawl_all#外部传入参数，是否爬取整个站点        
-#    allowed_domains = ["zhaopin.com"]\
+#    allowed_domains = ["zhaopin.com"]
 
     
     def parse(self, response):
-#        db=mydb()    
         exit_count=0
         for  detailInfo in  response.xpath("//div[@class='searchResultItemDetailed']"):
             if exit_count>3:
@@ -30,8 +29,6 @@ class JobSpider(scrapy.Spider):
             if not self.is_crawl_all:
                 try:
                     post_hour=int(detailInfo.css('p.searchResultJobAdrNum span em::text').extract()[1].split('小时前')[0])
-    #                self.logger.error(post_hour)
-    #                self.log(post_hour,level=self.logging.ERROR)
                     if time.localtime().tm_hour-post_hour<0:
                         exit_count+=1
                         continue                        
@@ -48,22 +45,15 @@ class JobSpider(scrapy.Spider):
             Job['crawl_timestamp']=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
             id_str=Job['searchResultJobName']+Job['searchResultCompanyname']+Job['searchResultJobAdrNum']+Job['crawl_timestamp']+str(random.randint(1,1000))
             Job['parmaryId']=hashlib.md5(id_str.encode('utf-8')).hexdigest()
-#            yield Job
-#            sql='insert into main_info(id,searchResultJobName,searchResultJobType,searchResultCompanyname,searchResultJobAdrNum,searchResultJobdescription,searchResultUrl,crawl_timestamp)  values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'%(Job['parmaryId'],Job['searchResultJobName'],Job['searchResultJobType'],Job['searchResultCompanyname'],Job['searchResultJobAdrNum'],Job['searchResultJobdescription'],Job['searchResultUrl'],Job['crawl_timestamp'])
-##            self.log(sql)
-#            db.insert(sql)
+            Job['jobSiteName']='智联'
             yield Job
             
             info_request=Request('https://'+Job['searchResultUrl'],callback=self.get_detail_info)
             
-#            info_request.meta['db']=db
             info_request.meta['parmaryId']=Job['parmaryId']
             yield info_request
-            
-#            yield Request('https://'+Job['searchResultUrl'],callback=lambda response ,mainInfoId=Job['parmaryId'],db:self.get_detail_info(response,Job['parmaryId'],db))
-            
         count=0
-        time.sleep(10)
+#        time.sleep(10)
         for page_i in response.xpath("//ul[@id='page']/li/a/span/text()"):            
             if '下一页'  in page_i.extract():
                 break
@@ -71,9 +61,7 @@ class JobSpider(scrapy.Spider):
                 count+=1
         next_page=response.urljoin(response.xpath("//ul[@id='page']/li/a/@href")[count].extract())
         yield Request(next_page)
-#        db.db_close()
     def get_detail_info(self,response):
-#        db=response.meta['db']
         mainInfoId=response.meta['parmaryId']
         jd=JobDetail()
         pre_title=''
@@ -107,15 +95,9 @@ class JobSpider(scrapy.Spider):
                 jd[pre_title2]=i.extract().strip()       
         jd['positionDescription']=''.join(response.xpath("//div[@class='j_cJob_Detail']//*[not(@class='clearfix cJob_Delivery mt24')]/text()").extract()).replace('立即投递','').replace('告诉小伙伴','').replace('举报','').strip()#信息细节
         jd['mainInfoId']=mainInfoId
+        jd['salary']=-1#智联网站没有薪水信息        
         field_d=['companyIndustry','companyScale','companyType','currentJobCity','positionType','numberOfDemand','postDatetime','positionDescription']
         for i in field_d:
             if i  not in jd or jd[i]==None:
                 jd[i]=''
         yield jd
-#        try:
-#            sql='insert into detail(mainInfoId,companyIndustry,companyScale,companyType,currentJobCity,positionType,numberOfDemand,postDatetime,positionDescription)  values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'%(jd['mainInfoId'],jd['companyIndustry'],jd['companyScale'],jd['companyType'],jd['currentJobCity'],jd['positionType'],jd['numberOfDemand'],jd['postDatetime'],jd['positionDescription'])                
-#            db.insert(sql)
-#        except Exception as e:
-#            self.log(jd)            
-#            self.log(e)
-#            self.log(sql)
