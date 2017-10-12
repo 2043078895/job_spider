@@ -6,7 +6,6 @@ from scrapy import  Request
 
 import time
 import hashlib
-import random
 class JobSpider(scrapy.Spider):
     name = "job"
     def __init__(self, is_crawl_all=False, *args, **kwargs):        
@@ -21,7 +20,16 @@ class JobSpider(scrapy.Spider):
 #    allowed_domains = ["zhaopin.com"]
 
     
-    def parse(self, response):
+    def parse(self, response):                
+        count=0
+#        time.sleep(10)
+        for page_i in response.xpath("//ul[@id='page']/li/a/span/text()"):            
+            if '下一页'  in page_i.extract():
+                break
+            else:
+                count+=1
+        next_page=response.urljoin(response.xpath("//ul[@id='page']/li/a/@href")[count].extract())
+        yield Request(next_page,callback=self.parse)        
         exit_count=0
         for  detailInfo in  response.xpath("//div[@class='searchResultItemDetailed']"):
             if exit_count>3:
@@ -43,24 +51,14 @@ class JobSpider(scrapy.Spider):
             Job['searchResultJobdescription']=detailInfo.css('p.searchResultJobdescription span::text').extract_first()
             Job['searchResultUrl']=detailInfo.css('p.searchResultJobName a::attr(href)').extract_first()
             Job['crawl_timestamp']=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-            id_str=Job['searchResultJobName']+Job['searchResultCompanyname']+Job['searchResultJobAdrNum']+Job['crawl_timestamp']+str(random.randint(1,1000))
+            id_str=Job['searchResultJobName']+Job['searchResultCompanyname']+Job['searchResultJobAdrNum']+Job['searchResultUrl']
             Job['parmaryId']=hashlib.md5(id_str.encode('utf-8')).hexdigest()
             Job['jobSiteName']='智联'
-            yield Job
-            
-            info_request=Request('https://'+Job['searchResultUrl'],callback=self.get_detail_info)
-            
+            yield Job        
+            info_request=Request('https://'+Job['searchResultUrl'],callback=self.get_detail_info)            
             info_request.meta['parmaryId']=Job['parmaryId']
             yield info_request
-        count=0
-#        time.sleep(10)
-        for page_i in response.xpath("//ul[@id='page']/li/a/span/text()"):            
-            if '下一页'  in page_i.extract():
-                break
-            else:
-                count+=1
-        next_page=response.urljoin(response.xpath("//ul[@id='page']/li/a/@href")[count].extract())
-        yield Request(next_page)
+
     def get_detail_info(self,response):
         mainInfoId=response.meta['parmaryId']
         jd=JobDetail()

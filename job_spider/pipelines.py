@@ -4,7 +4,7 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
-
+import time
 from job_spider.items import JobItem
 from job_spider.items import JobDetail
 #from mydb import  mydb
@@ -23,12 +23,22 @@ class JobSpiderPipeline(object):
 #            self.save_JobItem(item)
 #        elif isinstance(item,JobDetail):
 #            self.save_JobDetail(item)
-        try:
-            yield self.dbpool.runInteraction(self.do_replace,item)
-        except Exception as e:
-            print(e)
+        flag=0
+        error_count=0
+        while flag==0 and error_count<3:          
+            try:
+    #            query=self.dbpool.runInteraction(self.do_replace,item)
+    #            query.addErrback(self.handle_error)                
+                yield self.dbpool.runInteraction(self.do_replace,item)
+                flag=1
+            except Exception as e:
+                time.sleep(1)
+                error_count+=1
+                print(e)
         defer.returnValue(item)
 #        return item
+#    def handle_error(self,e):
+        
         
     @staticmethod
     def do_replace(tx,item):
@@ -71,9 +81,13 @@ class JobSpiderPipeline(object):
             self.log(item)            
             self.log(e)
     def save_JobDetail(self,item):        
+        
         try:
-            sql='insert into detail(mainInfoId,companyIndustry,companyScale,companyType,currentJobCity,positionType,numberOfDemand,postDatetime,positionDescription)  values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'%(item['mainInfoId'],item['companyIndustry'],item['companyScale'],item['companyType'],item['currentJobCity'],item['positionType'],item['numberOfDemand'],item['postDatetime'],item['positionDescription'])                
-            self.db.insert(sql)
+            flag=0
+            while  flag ==0:
+                sql='insert into detail(mainInfoId,companyIndustry,companyScale,companyType,currentJobCity,positionType,numberOfDemand,postDatetime,positionDescription)  values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'%(item['mainInfoId'],item['companyIndustry'],item['companyScale'],item['companyType'],item['currentJobCity'],item['positionType'],item['numberOfDemand'],item['postDatetime'],item['positionDescription'])                
+                self.db.insert(sql)
+                flag=1
         except Exception as e:
             self.log(item)
             self.log(e)

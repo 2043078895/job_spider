@@ -19,10 +19,10 @@ NEWSPIDER_MODULE = 'job_spider.spiders'
 #USER_AGENT = 'job_spider (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
-#LOG_LEVEL='WARNING'
-#DOWNLOAD_DELAY =1
-
+#ROBOTSTXT_OBEY = True
+#LOG_LEVEL='ERROR'
+#DOWNLOAD_DELAY =0.1
+#CONCURRENT_REQUESTS = 50
 
 
 ITEM_PIPELINES = {
@@ -35,7 +35,7 @@ DOWNLOADER_MIDDLEWARES = {
     'job_spider.middlewares.RotateUserAgentMiddleware':400,  
 }
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
